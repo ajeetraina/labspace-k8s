@@ -111,13 +111,28 @@ Follow the official Docker docs pattern to deploy a simple application.
 
     You should see `bb-entrypoint` with a `NodePort` on port `30001`.
 
-5. Test the application:
+5. Test the application using `kubectl port-forward`:
+
+    ```bash
+    kubectl port-forward svc/bb-entrypoint 30001:80 &
+    ```
+
+6. Curl the forwarded port:
 
     ```bash
     curl -s http://localhost:30001
     ```
 
     You should see the nginx welcome page HTML.
+
+    > [!NOTE]
+    > On Docker Desktop, Kind nodes run inside a VM, so NodePort is not directly reachable via `localhost`. Use `kubectl port-forward` to access services from your Mac.
+
+7. Stop the port-forward:
+
+    ```bash
+    kill %1 2>/dev/null
+    ```
 
 6. Clean up when done:
 

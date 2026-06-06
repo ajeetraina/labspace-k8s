@@ -1,32 +1,35 @@
 # From Compose to Kubernetes
 
-If you already use Docker Compose, you do not have to rewrite everything from scratch to move to Kubernetes. **Kompose** is a tool that converts Docker Compose files into Kubernetes manifests automatically.
+If you already use Docker Compose, you do not have to rewrite everything from scratch to move to Kubernetes. **Compose Bridge** is built into Docker Desktop and converts your Compose configuration into Kubernetes manifests automatically — no extra tools to install.
 
 ```mermaid
 graph LR
-    A[docker-compose.yaml] -->|kompose convert| B[K8s Deployments]
-    A -->|kompose convert| C[K8s Services]
-    B --> D[Running Pods]
-    C --> D
+    A[compose.yaml] -->|docker compose bridge convert| B[Namespace]
+    A --> C[Deployments]
+    A --> D[Services]
+    A --> E[Network Policies]
+    A --> F[Kustomize Overlay]
 ```
 
-## Install Kompose
+## What Compose Bridge generates
 
-1. Download and install the Kompose binary:
+The default transformation creates a full set of Kubernetes resources:
 
-    ```bash
-    OS=$(uname -s | tr '[:upper:]' '[:lower:]') && ARCH=$(uname -m | sed 's/x86_64/amd64/' | sed 's/aarch64/arm64/') && curl -L "https://github.com/kubernetes/kompose/releases/download/v1.35.0/kompose-${OS}-${ARCH}" -o kompose && chmod +x kompose && sudo mv ./kompose /usr/local/bin/kompose
-    ```
+| Resource | Purpose |
+|----------|---------|
+| **Namespace** | Isolates resources from other deployments |
+| **Deployments** | Maintains the specified number of replicas for each service |
+| **Services** | Enables service-to-service communication and exposes published ports |
+| **ConfigMaps** | Contains entries for each config resource in the Compose file |
+| **Network Policies** | Replicates the networking topology from the Compose configuration |
+| **PersistentVolumeClaims** | Handles volume management |
+| **Secrets** | Encoded secrets for local testing |
 
-2. Verify the installation:
-
-    ```bash
-    kompose version
-    ```
+It also generates a **Kustomize overlay** optimized for Docker Desktop, including LoadBalancer configs and the `desktop-storage-provisioner` for volume handling.
 
 ## Review the sample Compose file
 
-A sample multi-service Docker Compose file is included in your workspace. It defines a classic web application with a frontend, backend API, and Redis cache.
+A sample multi-service Docker Compose file is included in your project.
 
 1. Review the sample Compose file:
 
@@ -36,37 +39,33 @@ A sample multi-service Docker Compose file is included in your workspace. It def
 
     This is a simple three-service app (nginx, an API, and Redis) — the kind of thing you might run locally with `docker compose up`.
 
-## Convert Compose to Kubernetes
+## Convert Compose to Kubernetes manifests
 
-1. Navigate to the sample-compose directory and convert:
-
-    ```bash
-    cd sample-compose && kompose convert
-    ```
-
-2. List the generated Kubernetes manifests:
+1. Run the Compose Bridge conversion from the sample-compose directory:
 
     ```bash
-    ls -la *.yaml | grep -v docker-compose
+    docker compose -f sample-compose/docker-compose.yaml bridge convert
     ```
 
-    Kompose generates a Deployment and a Service for each Compose service.
+    This reads the Compose file and generates Kubernetes manifests in the `out/` directory.
 
-3. Review one of the generated files:
+2. Explore the generated output:
 
     ```bash
-    cat web-deployment.yaml
+    find out/ -type f
     ```
 
-    Notice how Kompose translated the Compose `image`, `ports`, and service name into Kubernetes-native resources.
+    You should see a structured directory with manifests and a Kustomize overlay for Docker Desktop.
 
-4. Return to the workspace root:
+3. Review the generated Deployment for the web service:
 
     ```bash
-    cd ..
+    cat out/web-deployment.yaml 2>/dev/null || cat out/*web* 2>/dev/null || ls out/
     ```
 
-## Deploy the converted manifests
+    Notice how Compose Bridge translated the Compose `image`, `ports`, and service name into Kubernetes-native resources.
+
+## Deploy to Kubernetes
 
 1. First, clean up the resources from previous sections:
 
@@ -74,16 +73,16 @@ A sample multi-service Docker Compose file is included in your workspace. It def
     kubectl delete deployment web-app 2>/dev/null; kubectl delete service web-app-internal web-app-nodeport 2>/dev/null
     ```
 
-2. Apply all the generated manifests at once:
+2. Apply the generated manifests using the Docker Desktop Kustomize overlay:
 
     ```bash
-    kubectl apply -f sample-compose/
+    kubectl apply -k out/overlays/desktop/
     ```
 
-    > [!NOTE]
-    > `kubectl apply -f <directory>/` applies every YAML file in that directory. The `docker-compose.yaml` file is ignored because it is not a valid Kubernetes manifest.
+    > [!TIP]
+    > The `-k` flag tells kubectl to use Kustomize, which applies the overlay with Docker Desktop-specific settings like the storage provisioner and LoadBalancer configuration.
 
-3. Watch all resources come up:
+3. Check all resources that were created:
 
     ```bash
     kubectl get all
@@ -97,7 +96,7 @@ A sample multi-service Docker Compose file is included in your workspace. It def
 
     Press `Ctrl+C` once all Pods show `Running`.
 
-## Test the converted services
+## Test the deployed services
 
 1. Test the API service from inside the cluster:
 
@@ -115,6 +114,26 @@ A sample multi-service Docker Compose file is included in your workspace. It def
 
     You should see: `PONG`
 
+3. Access the web service via port-forward:
+
+    ```bash
+    kubectl port-forward svc/web 8080:80 &
+    ```
+
+4. Curl the forwarded port:
+
+    ```bash
+    curl -s http://localhost:8080
+    ```
+
+    You should see the nginx welcome page HTML.
+
+5. Stop the port-forward:
+
+    ```bash
+    kill %1 2>/dev/null
+    ```
+
 ## Compare Compose and Kubernetes
 
 Here is a side-by-side comparison of the key concepts:
@@ -126,15 +145,21 @@ Here is a side-by-side comparison of the key concepts:
 | `ports:` | Service `ports` + `targetPort` | Network access |
 | `depends_on:` | No equivalent (use readiness probes) | Startup ordering |
 | `volumes:` | PersistentVolumeClaim | Persistent storage |
-| `docker compose up` | `kubectl apply -f` | Deploy everything |
-| `docker compose down` | `kubectl delete -f` | Tear down everything |
+| `docker compose up` | `kubectl apply -k` | Deploy everything |
+| `docker compose down` | `kubectl delete -k` | Tear down everything |
 
 ## Clean up everything
 
-Delete all the converted resources:
+Delete all the deployed resources:
 
 ```bash
-kubectl delete -f sample-compose/
+kubectl delete -k out/overlays/desktop/
+```
+
+Clean up the generated manifests:
+
+```bash
+rm -rf out/
 ```
 
 > [!TIP]
@@ -142,13 +167,14 @@ kubectl delete -f sample-compose/
 
 ## Congratulations! 🎉
 
-You have completed the Kubernetes with Docker Desktop and Kind lab. Here is what you accomplished:
+You have completed the Kubernetes on Docker Desktop lab. Here is what you accomplished:
 
-- **Created Kubernetes clusters** using Kind — both single-node and multi-node
+- **Enabled Kubernetes** on Docker Desktop via GUI and CLI
+- **Created clusters** — single-node (Kubeadm) and multi-node (Kind)
 - **Deployed Pods** using imperative commands and YAML manifests
 - **Managed Deployments** with scaling and rolling updates
 - **Exposed applications** with ClusterIP and NodePort Services
-- **Bridged Docker Compose to Kubernetes** using Kompose
+- **Bridged Docker Compose to Kubernetes** using Compose Bridge
 
 ### Next steps
 

@@ -17,5 +17,5 @@ sections:
     contentPath: 04-deployments.md
   - title: Services and Networking
     contentPath: 05-services.md
-  - title: From Compose to Kubernetes
+  - title: Compose Bridge to Kubernetes
     contentPath: 06-compose-bridge.md

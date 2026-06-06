@@ -78,20 +78,28 @@ A NodePort Service exposes the application on a port across all nodes, making it
     kubectl get service web-app-nodeport
     ```
 
-4. Find a node's internal IP:
+4. Test access via `kubectl port-forward`:
 
     ```bash
-    kubectl get nodes -o wide
+    kubectl port-forward svc/web-app-nodeport 30080:80 &
     ```
 
-5. Test access via the NodePort using one of the node IPs:
+5. Curl the forwarded port:
 
     ```bash
-    NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
-    curl -s http://$NODE_IP:30080
+    curl -s http://localhost:30080
     ```
 
     You should see the nginx welcome page.
+
+6. Stop the port-forward:
+
+    ```bash
+    kill %1 2>/dev/null
+    ```
+
+    > [!NOTE]
+    > On Docker Desktop, Kind node IPs are inside a VM and not directly reachable from your Mac. Use `kubectl port-forward` to access any Service locally.
 
 ## View Service endpoints
 
