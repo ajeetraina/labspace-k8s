@@ -1,15 +1,15 @@
 metadata:
-  id: kubernetes-with-kind
+  id: kubernetes-docker-desktop
   sourceRepo: github.com/ajeetraina/labspace-k8s
   contentVersion: 1.0.0
 
-title: Kubernetes with Docker Desktop and Kind
-description: Learn to create single-node and multi-node Kubernetes clusters using Kind, and deploy applications with Pods, Deployments, and Services.
+title: Kubernetes on Docker Desktop
+description: Learn to enable Kubernetes on Docker Desktop, create single-node and multi-node clusters, and deploy applications with Pods, Deployments, and Services.
 
 sections:
-  - title: Getting Started with Kubernetes
+  - title: Enable Kubernetes on Docker Desktop
     contentPath: 01-getting-started.md
-  - title: Creating Clusters with Kind
+  - title: Multi-Node Clusters with Kind
     contentPath: 02-kind-clusters.md
   - title: Working with Pods
     contentPath: 03-pods.md

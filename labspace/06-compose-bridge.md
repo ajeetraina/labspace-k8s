@@ -152,11 +152,8 @@ Delete all the converted resources:
 kubectl delete -f sample-compose/
 ```
 
-Delete the Kind cluster:
-
-```bash
-kind delete cluster --name multi-node
-```
+> [!TIP]
+> To remove a Kubernetes cluster, open the **Docker Desktop Dashboard**, go to the **Kubernetes** view, and delete the cluster from there.
 
 ## Congratulations! 🎉
 

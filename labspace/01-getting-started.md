@@ -1,10 +1,10 @@
-# Getting Started with Kubernetes
+# Enable Kubernetes on Docker Desktop
 
-Welcome to the **Kubernetes with Docker Desktop and Kind** lab! By the end of this lab, you will be able to:
+Welcome to the **Kubernetes on Docker Desktop** lab! By the end of this lab, you will be able to:
 
-- Create single-node and multi-node Kubernetes clusters using Kind
+- Enable and manage Kubernetes directly from Docker Desktop
+- Create single-node and multi-node clusters
 - Deploy and manage applications with Pods, Deployments, and Services
-- Scale applications and perform rolling updates
 - Convert Docker Compose files into Kubernetes manifests
 
 ## What is Kubernetes?
@@ -26,55 +26,135 @@ graph TD
 
 ## Kubernetes on Docker Desktop
 
-Docker Desktop ships with a built-in single-node Kubernetes cluster. There are two ways to enable it:
+Docker Desktop (4.51+) ships with built-in Kubernetes support. No external tools or installers needed — everything is managed from the Docker Desktop Dashboard.
 
-**Option A: Via the GUI**
-Navigate to **Settings > Kubernetes > Enable Kubernetes** and click **Apply & Restart**.
+Docker Desktop offers two cluster types:
 
-**Option B: Via the CLI** (Docker Desktop 4.32+)
+| Type | Description |
+|------|-------------|
+| **Kubeadm** | Single-node cluster. Docker Desktop manages the K8s version. Best for quick local development. |
+| **Kind** | Multi-node cluster. You can customize the K8s version and number of nodes. Best for realistic, production-like testing. |
 
-```bash no-run-button
-# Enable the built-in Kubernetes cluster
-docker desktop kubernetes enable
+## Enable a single-node cluster (Kubeadm)
 
-# Check its status
-docker desktop kubernetes status
-```
+1. Open the **Docker Desktop Dashboard**
+2. Navigate to the **Kubernetes** view from the left sidebar
+3. Select **Create cluster**
+4. Choose **Kubeadm** as the cluster type
+5. Select **Create**
 
-> [!NOTE]
-> The `docker desktop` CLI commands interact with the Docker Desktop application on your host machine. They are shown here for reference — on your own workstation, this is the quickest way to get a single-node K8s cluster running.
+Docker Desktop will pull the required images, install `kubectl`, generate certificates, and boot the cluster. This takes a couple of minutes.
 
-Docker Desktop's built-in Kubernetes is great for quick local development, but it only supports a **single node**. For this lab, you will use **Kind** (Kubernetes in Docker) instead. Kind lets you create both single-node and multi-node clusters using Docker containers as nodes — giving you a more realistic, production-like environment.
+> [!TIP]
+> You can also enable Kubernetes from **Settings > Kubernetes > Enable Kubernetes** and click **Apply & Restart**.
 
-## Verify your environment
+## Verify the cluster
 
-Start by confirming that Docker is available in this lab environment.
+Once the cluster is ready, `kubectl` is automatically available. Verify everything is working:
 
-1. Check that Docker is running:
-
-    ```bash
-    docker version --format '{{.Server.Version}}'
-    ```
-
-2. Verify Docker can run containers:
+1. Check the nodes in your cluster:
 
     ```bash
-    docker run --rm hello-world
+    kubectl get nodes
     ```
 
-    You should see the "Hello from Docker!" message.
+    You should see a single node named `docker-desktop` with `Ready` status:
 
-## Verify kubectl
+    ```plaintext no-copy-button
+    NAME             STATUS   ROLES           AGE   VERSION
+    docker-desktop   Ready    control-plane   1m    v1.32.3
+    ```
 
-Docker Desktop bundles `kubectl` automatically. Confirm it is available:
-
-1. Check the `kubectl` version:
+2. Confirm `kubectl` is pointed at the Docker Desktop cluster:
 
     ```bash
-    kubectl version --client
+    kubectl config current-context
     ```
 
-    You should see the client version printed. The server connection warning is expected — you have not created a cluster yet!
+    This should return `docker-desktop`.
+
+3. Check the cluster info:
+
+    ```bash
+    kubectl cluster-info
+    ```
+
+## Your first deployment
+
+Follow the official Docker docs pattern to deploy a simple application. Create a file named `bb.yaml` with a Deployment and a Service:
+
+1. Create a file named `bb.yaml` with the following contents:
+
+    ```yaml save-as=bb.yaml
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: bb-demo
+      namespace: default
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          bb: web
+      template:
+        metadata:
+          labels:
+            bb: web
+        spec:
+          containers:
+            - name: bb-site
+              image: nginx:alpine
+              ports:
+                - containerPort: 80
+    ---
+    apiVersion: v1
+    kind: Service
+    metadata:
+      name: bb-entrypoint
+      namespace: default
+    spec:
+      type: NodePort
+      selector:
+        bb: web
+      ports:
+        - port: 80
+          targetPort: 80
+          nodePort: 30001
+    ```
+
+2. Deploy the application:
+
+    ```bash
+    kubectl apply -f bb.yaml
+    ```
+
+3. Verify the Deployment is ready:
+
+    ```bash
+    kubectl get deployments
+    ```
+
+4. Check the Service:
+
+    ```bash
+    kubectl get services
+    ```
+
+    You should see `bb-entrypoint` with a `NodePort` on port `30001`.
+
+5. Test the application:
+
+    ```bash
+    curl -s http://localhost:30001
+    ```
+
+    You should see the nginx welcome page HTML.
+
+6. Clean up when done:
+
+    ```bash
+    kubectl delete -f bb.yaml
+    ```
 
 ## Quick reference: kubectl commands
 
@@ -85,8 +165,8 @@ Here are the most common `kubectl` patterns you will use throughout this lab:
 | `kubectl get <resource>` | List resources |
 | `kubectl describe <resource> <name>` | Show detailed info |
 | `kubectl apply -f <file>` | Create or update from a YAML file |
-| `kubectl delete <resource> <name>` | Delete a resource |
+| `kubectl delete -f <file>` | Delete resources defined in a file |
 | `kubectl logs <pod>` | View Pod logs |
 | `kubectl config get-contexts` | List available clusters |
 
-Your environment is ready — Docker is running and `kubectl` is available. In the next section, you will install Kind and create your first Kubernetes clusters.
+You now have a working single-node Kubernetes cluster on Docker Desktop. In the next section, you will create a multi-node cluster using Docker Desktop's built-in Kind support.

@@ -94,7 +94,7 @@ Scaling changes the number of replicas. Kubernetes creates or terminates Pods to
     kubectl get pods -l app=web-app -o wide
     ```
 
-    In your multi-node Kind cluster, Pods should be spread across the worker nodes.
+    In your multi-node cluster, Pods should be spread across the worker nodes.
 
 4. Scale back down to 3 replicas:
 

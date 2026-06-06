@@ -1,7 +1,7 @@
-# Kubernetes with Docker Desktop and Kind
+# Kubernetes on Docker Desktop
 
 This workspace contains starter files for the Kubernetes lab:
 
+- `bb.yaml` — Deployment + Service manifest (following Docker docs pattern)
 - `k8s/` — Kubernetes manifests (Pod, Deployment, Services)
-- `kind-configs/` — Kind cluster configuration files
 - `sample-compose/` — Docker Compose file for the Compose-to-Kubernetes bridge exercise

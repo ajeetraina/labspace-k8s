@@ -1,10 +1,10 @@
-# Creating Clusters with Kind
+# Multi-Node Clusters with Kind
 
-**Kind** (Kubernetes in Docker) is a tool for running local Kubernetes clusters using Docker containers as nodes. Each "node" is actually a Docker container running the Kubernetes components. This makes it perfect for local development and testing.
+Docker Desktop's single-node Kubeadm cluster is great for quick testing, but production Kubernetes runs across multiple nodes. Docker Desktop (4.51+) has **Kind** (Kubernetes in Docker) built in, letting you create multi-node clusters without installing anything extra.
 
 ```mermaid
 graph TD
-    A[Docker Engine] --> B[kind-control-plane container]
+    A[Docker Desktop] --> B[kind-control-plane container]
     A --> C[kind-worker container]
     A --> D[kind-worker2 container]
     B --> E[K8s Control Plane + etcd]
@@ -12,100 +12,74 @@ graph TD
     D --> G[kubelet + Pods]
 ```
 
-## Install Kind
+With Kind, each Kubernetes "node" runs as a Docker container. This lets you simulate a real multi-node cluster entirely on your local machine.
 
-1. Download and install the Kind binary:
+## Create a multi-node cluster from Docker Desktop
 
-    ```bash
-    curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.27.0/kind-linux-amd64 && chmod +x ./kind && sudo mv ./kind /usr/local/bin/kind
-    ```
+1. Open the **Docker Desktop Dashboard**
+2. Navigate to the **Kubernetes** view
+3. Select **Create cluster**
+4. Choose **Kind** as the cluster type
+5. Set the number of **worker nodes** (e.g., 2)
+6. Optionally choose a specific Kubernetes version
+7. Select **Create**
 
-2. Verify the installation:
+Docker Desktop will create Docker containers for each node and configure Kubernetes networking between them.
 
-    ```bash
-    kind version
-    ```
+## Verify the multi-node cluster
 
-## Create a single-node cluster
-
-A single-node Kind cluster runs both the control plane and workloads on one container. This is the simplest setup.
-
-1. Create a cluster named `single-node`:
+1. List all nodes in the cluster:
 
     ```bash
-    kind create cluster --name single-node --wait 60s
+    kubectl get nodes
     ```
 
-    Kind will pull the node image, create a Docker container, and configure Kubernetes inside it. This takes about a minute.
+    You should see three nodes — one control-plane and two workers:
 
-2. Check that the cluster is running:
+    ```plaintext no-copy-button
+    NAME                  STATUS   ROLES           AGE   VERSION
+    kind-control-plane    Ready    control-plane   2m    v1.32.3
+    kind-worker           Ready    <none>          90s   v1.32.3
+    kind-worker2          Ready    <none>          90s   v1.32.3
+    ```
+
+2. Get more details about the nodes:
 
     ```bash
-    kubectl cluster-info --context kind-single-node
+    kubectl get nodes -o wide
     ```
 
-3. List the nodes — you should see exactly one:
+    This shows the internal IPs, OS image, and container runtime for each node.
 
-    ```bash
-    kubectl get nodes --context kind-single-node
-    ```
-
-4. Look at the Docker container backing this cluster:
-
-    ```bash
-    docker ps --filter "name=single-node"
-    ```
-
-    Notice that the Kubernetes "node" is actually a Docker container!
-
-## Create a multi-node cluster
-
-A multi-node cluster has separate control plane and worker nodes, just like a production environment. Kind uses a YAML configuration file to define the cluster topology.
-
-1. Review the multi-node configuration file:
-
-    Open :fileLink[kind-configs/multi-node.yaml]{path="kind-configs/multi-node.yaml"} in the editor.
-
-    ```yaml no-run-button
-    kind: Cluster
-    apiVersion: kind.x-k8s.io/v1alpha4
-    nodes:
-      - role: control-plane
-      - role: worker
-      - role: worker
-    ```
-
-    This defines one control-plane node and two worker nodes.
-
-2. Create the multi-node cluster using this config:
-
-    ```bash
-    kind create cluster --name multi-node --config kind-configs/multi-node.yaml --wait 120s
-    ```
-
-3. List the nodes in the new cluster:
-
-    ```bash
-    kubectl get nodes --context kind-multi-node
-    ```
-
-    You should see three nodes: one control-plane and two workers.
-
-4. See all Kind clusters running on your machine:
-
-    ```bash
-    kind get clusters
-    ```
-
-5. Check the Docker containers — each node is its own container:
+3. Look at the Docker containers backing the cluster:
 
     ```bash
     docker ps --filter "label=io.x-k8s.kind.cluster"
     ```
 
+    Each Kubernetes node is a Docker container running on your machine.
+
+## Explore node details
+
+1. Describe a specific node to see its capacity and conditions:
+
+    ```bash
+    kubectl describe node kind-control-plane
+    ```
+
+    Look for the **Allocatable** section — it shows how much CPU and memory the node can give to Pods.
+
+2. Check which Pods are running on each node:
+
+    ```bash
+    kubectl get pods -A -o wide
+    ```
+
+    The `-A` flag shows Pods in all namespaces. System components like `coredns`, `kube-proxy`, and `etcd` are spread across the nodes.
+
 ## Switch between clusters
 
-When you have multiple clusters, use `kubectl config` to switch between them:
+If you have both a Kubeadm and a Kind cluster, you can switch between them:
 
 1. List all available contexts:
 
@@ -113,27 +87,31 @@ When you have multiple clusters, use `kubectl config` to switch between them:
     kubectl config get-contexts
     ```
 
-2. Switch to the multi-node cluster:
+    You should see entries like `docker-desktop` (Kubeadm) and `kind-kind` (Kind).
+
+2. Switch to the Kind cluster:
 
     ```bash
-    kubectl config use-context kind-multi-node
+    kubectl config use-context kind-kind
     ```
 
-3. Verify you are targeting the right cluster:
+3. Switch back to the Docker Desktop Kubeadm cluster:
 
     ```bash
-    kubectl get nodes
+    kubectl config use-context docker-desktop
     ```
 
 > [!NOTE]
-> For the rest of this lab, you will use the **multi-node** cluster. Make sure it is your active context before continuing.
+> For the rest of this lab, make sure you are using the **Kind multi-node cluster**. Run `kubectl config use-context kind-kind` if needed.
 
-## Clean up the single-node cluster
+## Kubeadm vs Kind — when to use which
 
-Since you will use the multi-node cluster going forward, delete the single-node one to free resources:
+| Feature | Kubeadm (Docker Desktop) | Kind (Docker Desktop) |
+|---------|--------------------------|----------------------|
+| Nodes | Single node | Multiple nodes |
+| Setup | One click | One click |
+| Node type | VM-based | Docker containers |
+| Multi-node | No | Yes |
+| Best for | Quick local dev | Realistic testing, CI/CD |
 
-```bash
-kind delete cluster --name single-node
-```
-
-You now have a multi-node Kubernetes cluster running entirely in Docker containers. In the next section, you will deploy your first workloads as Pods.
+You now have a multi-node Kubernetes cluster running entirely through Docker Desktop. In the next section, you will deploy your first workloads as Pods.
