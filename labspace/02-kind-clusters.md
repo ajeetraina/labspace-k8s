@@ -4,13 +4,13 @@ Docker Desktop's single-node Kubeadm cluster is great for quick testing, but pro
 
 ```mermaid
 graph TD
-    A[Docker Desktop] --> B[desktop-control-plane container]
-    A --> C[desktop-worker container]
+    A[Docker Desktop] --> B[desktop-control-plane]
+    A --> C[desktop-worker]
     B --> D[K8s Control Plane + etcd]
     C --> E[kubelet + Pods]
 ```
 
-With Kind, each Kubernetes "node" runs as a Docker container. This lets you simulate a real multi-node cluster entirely on your local machine.
+With Kind, each Kubernetes node runs as a Docker container managed by Docker Desktop. These containers are hidden by default but can be revealed by enabling **"Show system containers"** in settings. This lets you simulate a real multi-node cluster entirely on your local machine.
 
 ## Create a multi-node cluster from Docker Desktop
 
@@ -22,7 +22,7 @@ With Kind, each Kubernetes "node" runs as a Docker container. This lets you simu
 6. Optionally choose a specific Kubernetes version
 7. Select **Create**
 
-Docker Desktop will create Docker containers for each node and configure Kubernetes networking between them. This takes a couple of minutes.
+Docker Desktop will create containers for each node and configure Kubernetes networking between them. This takes a couple of minutes.
 
 ## Verify the multi-node cluster
 
@@ -48,13 +48,20 @@ Docker Desktop will create Docker containers for each node and configure Kuberne
 
     This shows the internal IPs, OS image, and container runtime for each node.
 
-3. Look at the Docker containers backing the cluster:
+3. View the Kubernetes system containers with `docker ps`:
+
+    By default, Docker Desktop hides its internal containers. To see them, go to **Settings > Kubernetes** and enable **"Show system containers (advanced)"**.
+
+    Once enabled, run:
 
     ```bash
-    docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}" | grep desktop
+    docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}"
     ```
 
-    Each Kubernetes node is a Docker container running on your machine.
+    You should now see the Kind node containers (e.g., `desktop-control-plane`, `desktop-worker`) alongside the regular containers.
+
+    > [!TIP]
+    > This is useful for debugging — you can inspect, exec into, or view logs of the node containers just like any other Docker container.
 
 ## Explore node details
 
