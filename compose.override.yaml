@@ -2,6 +2,13 @@ services:
   configurator:
     environment:
       PROJECT_CLONE_URL: https://github.com/ajeetraina/labspace-k8s
+      TERMINAL_URL: http://host.docker.internal:8085
 
   workspace:
-    image: dockersamples/labspace-workspace-base
+    provider:
+      type: labspace
+      options:
+        type: ttyd
+
+  # Not needed — workspace is ttyd on the host, not a container
+  host-republisher: !reset null

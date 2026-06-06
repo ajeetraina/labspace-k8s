@@ -15,7 +15,7 @@ graph LR
 1. Download and install the Kompose binary:
 
     ```bash
-    curl -L https://github.com/kubernetes/kompose/releases/download/v1.35.0/kompose-linux-amd64 -o kompose && chmod +x kompose && sudo mv ./kompose /usr/local/bin/kompose
+    OS=$(uname -s | tr '[:upper:]' '[:lower:]') && ARCH=$(uname -m | sed 's/x86_64/amd64/' | sed 's/aarch64/arm64/') && curl -L "https://github.com/kubernetes/kompose/releases/download/v1.35.0/kompose-${OS}-${ARCH}" -o kompose && chmod +x kompose && sudo mv ./kompose /usr/local/bin/kompose
     ```
 
 2. Verify the installation:
@@ -78,7 +78,7 @@ A sample multi-service Docker Compose file is included in your workspace. It def
 4. Return to the workspace root:
 
     ```bash
-    cd /home/coder/project
+    cd ..
     ```
 
 ## Deploy the converted manifests
