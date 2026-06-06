@@ -1,0 +1,16 @@
+services:
+  web:
+    image: nginx:1.27-alpine
+    ports:
+      - "8080:80"
+
+  api:
+    image: hashicorp/http-echo
+    command: ["-text=API response from Kubernetes!", "-listen=:5000"]
+    ports:
+      - "5000:5000"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"

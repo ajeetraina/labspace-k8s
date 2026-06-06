@@ -1,25 +1,21 @@
 metadata:
-  id: ajeetraina/labspace-k8s
+  id: kubernetes-with-kind
   sourceRepo: github.com/ajeetraina/labspace-k8s
-  contentVersion: abcd123 # Will be filled in during CI
+  contentVersion: 1.0.0
 
-title: Labspace starter
-description: |
-  A basic template for creating a Labspace, including all of the boilerplate needed to write and publish a Labspace.
+title: Kubernetes with Docker Desktop and Kind
+description: Learn to create single-node and multi-node Kubernetes clusters using Kind, and deploy applications with Pods, Deployments, and Services.
 
 sections:
-  - title: Introduction
-    contentPath: 01-introduction.md
-  - title: Main Content 1
-    contentPath: 02-main-content.md
-  - title: Conclusion
-    contentPath: 03-conclusion.md
-
-# Services are used to add default tabs in the Labspace interface.
-# The IDE will always be present as a service, but you can add additional services as needed.
-# Icon values come from https://fonts.google.com/icons/
-services:
-  - id: app
-    url: http://localhost:3000
-    title: App
-    icon: anchor
+  - title: Getting Started with Kubernetes
+    contentPath: 01-getting-started.md
+  - title: Creating Clusters with Kind
+    contentPath: 02-kind-clusters.md
+  - title: Working with Pods
+    contentPath: 03-pods.md
+  - title: Deployments and Scaling
+    contentPath: 04-deployments.md
+  - title: Services and Networking
+    contentPath: 05-services.md
+  - title: From Compose to Kubernetes
+    contentPath: 06-compose-bridge.md
