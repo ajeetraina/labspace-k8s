@@ -41,28 +41,13 @@ The quickest way to create a Pod is with `kubectl run`:
 
 For repeatable deployments, you define Pods in YAML manifests. A sample Pod manifest is included in your workspace.
 
-1. Open :fileLink[k8s/pod.yaml]{path="k8s/pod.yaml"} to review it:
+1. Review the sample Pod manifest included in your project:
 
-    ```yaml no-run-button
-    apiVersion: v1
-    kind: Pod
-    metadata:
-      name: hello-app
-      labels:
-        app: hello
-        tier: frontend
-    spec:
-      containers:
-        - name: hello
-          image: hashicorp/http-echo
-          args:
-            - "-text=Hello from Kubernetes!"
-            - "-listen=:8080"
-          ports:
-            - containerPort: 8080
+    ```bash
+    cat k8s/pod.yaml
     ```
 
-    This manifest defines a Pod running a simple HTTP echo server that responds with "Hello from Kubernetes!".
+    This manifest defines a Pod running a simple HTTP echo server that responds with "Hello from Kubernetes!". It has labels (`app: hello`, `tier: frontend`) that you will use later for filtering.
 
 2. Apply the manifest to create the Pod:
 
@@ -86,13 +71,13 @@ For repeatable deployments, you define Pods in YAML manifests. A sample Pod mani
     kubectl logs hello-app
     ```
 
-2. Forward traffic from your terminal to the Pod:
+2. Forward traffic from your terminal to the Pod (runs in the background):
 
-    ```bash terminal-id=port-forward
-    kubectl port-forward pod/hello-app 8080:8080
+    ```bash
+    kubectl port-forward pod/hello-app 8080:8080 &
     ```
 
-3. In a new terminal, test the endpoint:
+3. Test the endpoint:
 
     ```bash
     curl http://localhost:8080
@@ -100,7 +85,11 @@ For repeatable deployments, you define Pods in YAML manifests. A sample Pod mani
 
     You should see: `Hello from Kubernetes!`
 
-4. Stop the port-forward by pressing `Ctrl+C` in the port-forward terminal.
+4. Stop the port-forward:
+
+    ```bash
+    kill %1 2>/dev/null
+    ```
 
 ## Pod labels and selectors
 

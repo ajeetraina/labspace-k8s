@@ -24,23 +24,13 @@ Kubernetes offers several Service types:
 
 ClusterIP is the default Service type. It gives your Pods a stable internal DNS name and IP.
 
-1. Open :fileLink[k8s/service-clusterip.yaml]{path="k8s/service-clusterip.yaml"} to review:
+1. Review the ClusterIP Service manifest:
 
-    ```yaml no-run-button
-    apiVersion: v1
-    kind: Service
-    metadata:
-      name: web-app-internal
-    spec:
-      type: ClusterIP
-      selector:
-        app: web-app
-      ports:
-        - port: 80
-          targetPort: 80
+    ```bash
+    cat k8s/service-clusterip.yaml
     ```
 
-    The `selector` field matches the labels on your `web-app` Pods from the previous section.
+    The `selector` field matches the labels on your `web-app` Pods from the previous section. The Service listens on port 80 and forwards to the Pods' port 80.
 
 2. Apply it:
 
@@ -68,21 +58,10 @@ ClusterIP is the default Service type. It gives your Pods a stable internal DNS 
 
 A NodePort Service exposes the application on a port across all nodes, making it accessible from outside the cluster.
 
-1. Open :fileLink[k8s/service-nodeport.yaml]{path="k8s/service-nodeport.yaml"} to review:
+1. Review the NodePort Service manifest:
 
-    ```yaml no-run-button
-    apiVersion: v1
-    kind: Service
-    metadata:
-      name: web-app-nodeport
-    spec:
-      type: NodePort
-      selector:
-        app: web-app
-      ports:
-        - port: 80
-          targetPort: 80
-          nodePort: 30080
+    ```bash
+    cat k8s/service-nodeport.yaml
     ```
 
     This exposes the Service on port `30080` on every node in the cluster.

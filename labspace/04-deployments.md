@@ -12,40 +12,13 @@ graph TD
 
 ## Create a Deployment
 
-1. Open :fileLink[k8s/deployment.yaml]{path="k8s/deployment.yaml"} to review it:
+1. Review the Deployment manifest included in your project:
 
-    ```yaml no-run-button
-    apiVersion: apps/v1
-    kind: Deployment
-    metadata:
-      name: web-app
-      labels:
-        app: web-app
-    spec:
-      replicas: 2
-      selector:
-        matchLabels:
-          app: web-app
-      template:
-        metadata:
-          labels:
-            app: web-app
-        spec:
-          containers:
-            - name: web
-              image: nginx:1.27-alpine
-              ports:
-                - containerPort: 80
-              resources:
-                requests:
-                  memory: "64Mi"
-                  cpu: "50m"
-                limits:
-                  memory: "128Mi"
-                  cpu: "100m"
+    ```bash
+    cat k8s/deployment.yaml
     ```
 
-    Key fields:
+    Key fields to notice:
     - **replicas: 2** — Kubernetes will maintain exactly 2 Pods
     - **selector** — tells the Deployment which Pods it manages (by label)
     - **template** — defines the Pod spec used for every replica

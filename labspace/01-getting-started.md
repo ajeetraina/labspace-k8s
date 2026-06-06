@@ -58,20 +58,19 @@ Once the cluster is ready, `kubectl` is automatically available. Verify everythi
     kubectl get nodes
     ```
 
-    You should see a single node named `docker-desktop` with `Ready` status:
+    You should see your nodes with `Ready` status. For a Kubeadm cluster you will see a single `docker-desktop` node. For a Kind cluster you will see `desktop-control-plane` and `desktop-worker` nodes:
 
     ```plaintext no-copy-button
-    NAME             STATUS   ROLES           AGE   VERSION
-    docker-desktop   Ready    control-plane   1m    v1.32.3
+    NAME                    STATUS   ROLES           AGE   VERSION
+    desktop-control-plane   Ready    control-plane   13m   v1.34.3
+    desktop-worker          Ready    <none>          13m   v1.34.3
     ```
 
-2. Confirm `kubectl` is pointed at the Docker Desktop cluster:
+2. Confirm which cluster context `kubectl` is using:
 
     ```bash
     kubectl config current-context
     ```
-
-    This should return `docker-desktop`.
 
 3. Check the cluster info:
 
@@ -81,45 +80,15 @@ Once the cluster is ready, `kubectl` is automatically available. Verify everythi
 
 ## Your first deployment
 
-Follow the official Docker docs pattern to deploy a simple application. Create a file named `bb.yaml` with a Deployment and a Service:
+Follow the official Docker docs pattern to deploy a simple application.
 
-1. Create a file named `bb.yaml` with the following contents:
+1. A sample manifest `bb.yaml` is already in your project directory. Review it:
 
-    ```yaml save-as=bb.yaml
-    apiVersion: apps/v1
-    kind: Deployment
-    metadata:
-      name: bb-demo
-      namespace: default
-    spec:
-      replicas: 1
-      selector:
-        matchLabels:
-          bb: web
-      template:
-        metadata:
-          labels:
-            bb: web
-        spec:
-          containers:
-            - name: bb-site
-              image: nginx:alpine
-              ports:
-                - containerPort: 80
-    ---
-    apiVersion: v1
-    kind: Service
-    metadata:
-      name: bb-entrypoint
-      namespace: default
-    spec:
-      type: NodePort
-      selector:
-        bb: web
-      ports:
-        - port: 80
-          targetPort: 80
-          nodePort: 30001
+    ```bash
+    cat bb.yaml
+    ```
+
+    This file defines a Deployment (nginx container) and a NodePort Service (exposed on port 30001).
     ```
 
 2. Deploy the application:

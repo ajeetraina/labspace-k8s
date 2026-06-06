@@ -28,28 +28,13 @@ graph LR
 
 A sample multi-service Docker Compose file is included in your workspace. It defines a classic web application with a frontend, backend API, and Redis cache.
 
-1. Open :fileLink[sample-compose/docker-compose.yaml]{path="sample-compose/docker-compose.yaml"} to review it:
+1. Review the sample Compose file:
 
-    ```yaml no-run-button
-    services:
-      web:
-        image: nginx:1.27-alpine
-        ports:
-          - "8080:80"
-
-      api:
-        image: hashicorp/http-echo
-        command: ["-text=API response from Kubernetes!", "-listen=:5000"]
-        ports:
-          - "5000:5000"
-
-      redis:
-        image: redis:7-alpine
-        ports:
-          - "6379:6379"
+    ```bash
+    cat sample-compose/docker-compose.yaml
     ```
 
-    This is a simple three-service app — the kind of thing you might run locally with `docker compose up`.
+    This is a simple three-service app (nginx, an API, and Redis) — the kind of thing you might run locally with `docker compose up`.
 
 ## Convert Compose to Kubernetes
 

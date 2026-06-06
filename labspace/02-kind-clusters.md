@@ -4,12 +4,10 @@ Docker Desktop's single-node Kubeadm cluster is great for quick testing, but pro
 
 ```mermaid
 graph TD
-    A[Docker Desktop] --> B[kind-control-plane container]
-    A --> C[kind-worker container]
-    A --> D[kind-worker2 container]
-    B --> E[K8s Control Plane + etcd]
-    C --> F[kubelet + Pods]
-    D --> G[kubelet + Pods]
+    A[Docker Desktop] --> B[desktop-control-plane container]
+    A --> C[desktop-worker container]
+    B --> D[K8s Control Plane + etcd]
+    C --> E[kubelet + Pods]
 ```
 
 With Kind, each Kubernetes "node" runs as a Docker container. This lets you simulate a real multi-node cluster entirely on your local machine.
@@ -17,14 +15,14 @@ With Kind, each Kubernetes "node" runs as a Docker container. This lets you simu
 ## Create a multi-node cluster from Docker Desktop
 
 1. Open the **Docker Desktop Dashboard**
-2. Navigate to the **Kubernetes** view
+2. Navigate to the **Kubernetes** view from the left sidebar
 3. Select **Create cluster**
 4. Choose **Kind** as the cluster type
-5. Set the number of **worker nodes** (e.g., 2)
+5. Set the number of **worker nodes** (e.g., 1 for a 2-node cluster)
 6. Optionally choose a specific Kubernetes version
 7. Select **Create**
 
-Docker Desktop will create Docker containers for each node and configure Kubernetes networking between them.
+Docker Desktop will create Docker containers for each node and configure Kubernetes networking between them. This takes a couple of minutes.
 
 ## Verify the multi-node cluster
 
@@ -34,13 +32,12 @@ Docker Desktop will create Docker containers for each node and configure Kuberne
     kubectl get nodes
     ```
 
-    You should see three nodes — one control-plane and two workers:
+    You should see the control-plane and worker nodes with `Ready` status:
 
     ```plaintext no-copy-button
-    NAME                  STATUS   ROLES           AGE   VERSION
-    kind-control-plane    Ready    control-plane   2m    v1.32.3
-    kind-worker           Ready    <none>          90s   v1.32.3
-    kind-worker2          Ready    <none>          90s   v1.32.3
+    NAME                    STATUS   ROLES           AGE   VERSION
+    desktop-control-plane   Ready    control-plane   13m   v1.34.3
+    desktop-worker          Ready    <none>          13m   v1.34.3
     ```
 
 2. Get more details about the nodes:
@@ -54,22 +51,28 @@ Docker Desktop will create Docker containers for each node and configure Kuberne
 3. Look at the Docker containers backing the cluster:
 
     ```bash
-    docker ps --filter "label=io.x-k8s.kind.cluster"
+    docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}" | grep desktop
     ```
 
     Each Kubernetes node is a Docker container running on your machine.
 
 ## Explore node details
 
-1. Describe a specific node to see its capacity and conditions:
+1. Describe the control-plane node to see its capacity and conditions:
 
     ```bash
-    kubectl describe node kind-control-plane
+    kubectl describe node desktop-control-plane
     ```
 
     Look for the **Allocatable** section — it shows how much CPU and memory the node can give to Pods.
 
-2. Check which Pods are running on each node:
+2. Describe the worker node:
+
+    ```bash
+    kubectl describe node desktop-worker
+    ```
+
+3. Check which Pods are running on each node:
 
     ```bash
     kubectl get pods -A -o wide
@@ -87,22 +90,20 @@ If you have both a Kubeadm and a Kind cluster, you can switch between them:
     kubectl config get-contexts
     ```
 
-    You should see entries like `docker-desktop` (Kubeadm) and `kind-kind` (Kind).
+2. Switch to a specific context:
 
-2. Switch to the Kind cluster:
-
-    ```bash
-    kubectl config use-context kind-kind
+    ```bash no-run-button
+    kubectl config use-context <context-name>
     ```
 
-3. Switch back to the Docker Desktop Kubeadm cluster:
+3. Verify the current context:
 
     ```bash
-    kubectl config use-context docker-desktop
+    kubectl config current-context
     ```
 
 > [!NOTE]
-> For the rest of this lab, make sure you are using the **Kind multi-node cluster**. Run `kubectl config use-context kind-kind` if needed.
+> For the rest of this lab, make sure you are using the **Kind multi-node cluster**. Check with `kubectl get nodes` — you should see `desktop-control-plane` and `desktop-worker`.
 
 ## Kubeadm vs Kind — when to use which
 
@@ -110,7 +111,7 @@ If you have both a Kubeadm and a Kind cluster, you can switch between them:
 |---------|--------------------------|----------------------|
 | Nodes | Single node | Multiple nodes |
 | Setup | One click | One click |
-| Node type | VM-based | Docker containers |
+| Node naming | `docker-desktop` | `desktop-control-plane`, `desktop-worker` |
 | Multi-node | No | Yes |
 | Best for | Quick local dev | Realistic testing, CI/CD |
 
